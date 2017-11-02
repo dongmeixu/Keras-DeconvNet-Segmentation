@@ -2,6 +2,7 @@ from keras.models import Model
 from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, BatchNormalization
 from keras.layers.convolutional import Conv2DTranspose
 from keras.optimizers import Adam
+from keras.callbacks import ModelCheckpoint
 from metrics import *
 import os
 import tensorflow as tf
@@ -14,7 +15,7 @@ import cv2
 from collections import defaultdict
 
 # 指定GPU
-os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 FLAGS = tf.flags.FLAGS
 # tf.flags.DEFINE_integer("batch_size", "1", "batch size for training")
@@ -24,17 +25,17 @@ tf.flags.DEFINE_integer("mask_channels", "9", "mask channels for output")
 
 tf.flags.DEFINE_string("data_dir", "/media/files/xdm/ningxia-hn1/dataset/", "path to dataset")
 tf.flags.DEFINE_string("model_dir", "DeconvNet/model/", "Path to vgg model mat")
-tf.flags.DEFINE_string("npy_dir", "/home/xdm/deployed_projects/fcn_rnn/vgg16-rnn/npy/", "Path to npy-data")
+tf.flags.DEFINE_string("npy_dir", "/home/xdm/deployed_projects/kaggle_dstl/ningxia-hn1/npy/", "Path to npy-data")
 tf.flags.DEFINE_string("mask_dir", "DeconvNet/mask/", "Path to mask-data")
 
-windows_dir = r"F:\三百米裁切\hn1"
-TWF_FILE = windows_dir + '\hn1.tfw'
-DF = pd.read_csv(windows_dir + '\hn1_train_wkt.csv')
-GS = pd.read_csv(windows_dir + '\hn1_grid_sizes.csv', names=['ImageId', 'Xmax', 'Ymin'], skiprows=1)
+# windows_dir = r"F:\三百米裁切\hn1"
+# TWF_FILE = windows_dir + '\hn1.tfw'
+# DF = pd.read_csv(windows_dir + '\hn1_train_wkt.csv')
+# GS = pd.read_csv(windows_dir + '\hn1_grid_sizes.csv', names=['ImageId', 'Xmax', 'Ymin'], skiprows=1)
 
-# TWF_FILE = FLAGS.data_dir + 'hn1.tfw'
-# DF = pd.read_csv(FLAGS.data_dir + 'hn1_train_wkt.csv')
-# GS = pd.read_csv(FLAGS.data_dir + 'hn1_grid_sizes.csv', names=['ImageId', 'Xmax', 'Ymin'], skiprows=1)
+TWF_FILE = FLAGS.data_dir + 'hn1.tfw'
+DF = pd.read_csv(FLAGS.data_dir + 'hn1_train_wkt.csv')
+GS = pd.read_csv(FLAGS.data_dir + 'hn1_grid_sizes.csv', names=['ImageId', 'Xmax', 'Ymin'], skiprows=1)
 
 
 def get_patches(img, msk, amt=10000, aug=True):
@@ -99,6 +100,7 @@ def calc_jacc(model):
     return score, trs
 
 
+# 网络结构参考Learning Deconvolution Network for Semantic Segmentation这篇论文改的
 def get_net():
     inputs = Input((FLAGS.image_size, FLAGS.image_size, FLAGS.image_channels))
     conv1_1 = Conv2D(filters=64, kernel_size=(3, 3), padding="same", activation="relu")(inputs)
@@ -200,6 +202,6 @@ def train_net():
     return model
 
 
-# model = train_net()
-# calc_jacc(model)
+model = train_net()
+calc_jacc(model)
 print(get_net().summary())
